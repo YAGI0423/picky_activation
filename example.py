@@ -12,7 +12,6 @@ from torchvision.transforms import Compose, ToTensor, Normalize, Lambda
 from logicGateDataset.datasets import AndGate, OrGate, XorGate, NotGate
 
 
-
 class Model(nn.Module):
     def __init__(self) -> None:
         super(Model, self).__init__()
