@@ -51,9 +51,9 @@ def mnistDataLoader(train: bool, batch_size: int) -> DataLoader:
 
 
 if __name__ == '__main__':
-    dataset = XorGate(dataset_size=5000)
-    dataLoader = DataLoader(dataset, batch_size=1, shuffle=True)
-    # dataLoader = mnistDataLoader(train=True, batch_size=64)
+    # dataset = XorGate(dataset_size=5000)
+    # dataLoader = DataLoader(dataset, batch_size=1, shuffle=True)
+    dataLoader = mnistDataLoader(train=True, batch_size=64)
 
     model = Model()
 
