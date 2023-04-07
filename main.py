@@ -1,3 +1,4 @@
+import os
 import argparse
 from tqdm import tqdm
 from matplotlib import pyplot as plt
@@ -51,10 +52,18 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--depth', type=int, default=1, choices=(1, 2, 3))
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--lr', type=float, default=0.01)
-    # parser.add_argument('--dataset_size', type=int, default=4)
+    parser.add_argument('--device', type=str, default='cpu', choices=('cuda', 'cpu'))
     # parser.add_argument('--logic', type=str, default='XOR', choices=('AND', 'OR', 'XOR', 'NOT'))
     # parser.add_argument('--input_size', type=int, default=2)
     return parser.parse_args()
+
+def seed_everything(seed: int=423) -> None:
+    # random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
 
 def get_model_shape(mode: str, depth: int) -> tuple:
     #Mode와 Depth에 따른 모델 형태 반환
@@ -67,6 +76,12 @@ def get_model_shape(mode: str, depth: int) -> tuple:
     shapes = [dataset_shapes[mode][shape] for shape in range(depth)]
     shapes.append(dataset_shapes[mode][-1])
     return tuple(shapes)
+
+def copy_param(alpha: Module, beta: Module) -> None:
+    '''
+    copy model 'alpha' to 'beta'
+    '''
+    beta.load_state_dict(alpha.state_dict())
 
 def mnistDataLoader(train: bool, batch_size: int) -> DataLoader:
     '''
@@ -90,51 +105,53 @@ def mnistDataLoader(train: bool, batch_size: int) -> DataLoader:
     )
     return loader
 
-def train_model(model: Module, x: Tensor, y: Tensor, cri, optim) -> float:
-    y_hat = model(x)
-    loss = cri(y_hat, y)
-
-    optim.zero_grad()
-    loss.backward()
-    optim.step()
-    return loss.item()
-
-def copy_param(alpha: Module, beta: Module) -> None:
-    '''
-    copy model 'alpha' to 'beta'
-    '''
-    beta.load_state_dict(alpha.state_dict())
+def save_plot(swift_acc: list, default_acc: list, head_title: str, figure_path: str) -> None:
+    plt.figure(figsize=(14, 5.5))
+    plt.suptitle(head_title, fontsize=15, fontweight='bold')
+    plt.subplots_adjust(left=0.05, right=0.95, bottom=0.125, top=0.825, wspace=0.175, hspace=0.1)
+    
+    plt.subplot(1, 2, 1)
+    plt.title('Swift Activation', fontdict={'fontsize': 13, 'fontweight': 'bold'}, loc='left', pad=10)
+    plt.plot(swift_acc, color='green')
+    plt.grid()
+    
+    plt.subplot(1, 2, 2)
+    plt.title('Default(ReLU) Activation', fontdict={'fontsize': 13, 'fontweight': 'bold'}, loc='left', pad=10)
+    plt.plot(default_acc, color='black')
+    plt.grid()
+    plt.savefig(figure_path)
 
 get_mean = lambda x: (sum(x) / len(x))
 
 
 if __name__ == '__main__':
     args = get_args()
+    seed_everything() #Fix SEED
+    DEVICE = args.device
 
     model_shape = get_model_shape(mode=args.mode, depth=args.depth)
 
-    swift_model = Model(
+    swift_model = Model( #swift activation Model
         shape=model_shape,
         optimizer=torch.optim.SGD,
         lr=args.lr,
         loss_function=nn.MSELoss(),
         is_swift=True,
-    )
-    default_model = Model(
+    ).to(DEVICE)
+    default_model = Model( #Default(ReLU) activation Model
         shape=model_shape,
         optimizer=torch.optim.SGD,
         lr=args.lr,
         loss_function=nn.MSELoss(),
         is_swift=False,
-    )
+    ).to(DEVICE)
     
-    #siwft model의 파라미터와 default model의 파라미터 일치화
-    copy_param(alpha=swift_model, beta=default_model)
+    copy_param(alpha=swift_model, beta=default_model) #swift parameter copy to default model
 
     if args.mode == 'logic':
         dataLoader = tqdm(
             DataLoader(
-                XorGate(dataset_size=5000),
+                XorGate(dataset_size=1000),
                 batch_size=args.batch_size,
                 shuffle=True
             )
@@ -142,6 +159,7 @@ if __name__ == '__main__':
 
         swi_losses, def_losses = list(), list()
         for x, y in dataLoader:
+            x, y = x.to(DEVICE), y.to(DEVICE)
             swi_loss = swift_model.train(x, y)
             def_loss = default_model.train(x, y)
 
@@ -151,9 +169,12 @@ if __name__ == '__main__':
                 f'Swift Loss: {get_mean(swi_losses):.3f}   Default Loss: {get_mean(def_losses):.3f}'
             )
             
-
-        raise
-
+        save_plot(
+            swift_acc=swi_losses,
+            default_acc=def_losses,
+            head_title=f'Loss on XOR Dataset',
+            figure_path='./figures/1_lossOnXorDataset.png',
+        )
 
     elif args.mode == 'mnist':
         pass
