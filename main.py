@@ -94,7 +94,6 @@ def mnistDataLoader(train: bool, batch_size: int) -> DataLoader:
         Normalize(mean=(0.1307, ), std=(0.3081, )),
         Lambda(lambda x: torch.flatten(x)),
     ])
-
     loader = DataLoader(
         MNIST(
             root='./dataset/mnist/',
@@ -175,9 +174,9 @@ if __name__ == '__main__':
             head_title=f'Loss on XOR Dataset',
             figure_path='./figures/1_lossOnXorDataset.png',
         )
-
     elif args.mode == 'mnist':
-        pass
+        dataLoader = mnistDataLoader(train=True, batch_size=args.batch_size)
+        
     elif args.mode == 'cifar10':
         pass
     raise
