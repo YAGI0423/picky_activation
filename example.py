@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import torch
 from torch import nn
 from torch import Tensor
+from torch.nn import Module
 
 import activation
 
@@ -14,24 +15,17 @@ from torchvision.transforms import Compose, ToTensor, Normalize, Lambda
 from logicGateDataset.datasets import XorGate
 
 
-def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Argument Help')
-    parser.add_argument('--mode', type=str, default='logic', choices=('logic', 'mnist', 'cifar10'))
-    parser.add_argument('--depth', type=int, default=1, choices=(1, 2, 3))
-    parser.add_argument('--batch_size', type=int, default=1)
-    # parser.add_argument('--dataset_size', type=int, default=4)
-    # parser.add_argument('--logic', type=str, default='XOR', choices=('AND', 'OR', 'XOR', 'NOT'))
-    # parser.add_argument('--input_size', type=int, default=2)
-    return parser.parse_args()
-
-
-class Model(nn.Module):
-    def __init__(self, shape: list, is_swift: bool=False) -> None:
+class Model(Module):
+    def __init__(self, shape: list, optimizer, lr: float, loss_function, is_swift: bool=False) -> None:
         super(Model, self).__init__()
-        self.layers = nn.Sequential(*self.get_layers(shape, is_swift))
+        self.layers = nn.Sequential(*self._get_layers(shape, is_swift))
+
+        self.optim = optimizer(self.parameters(), lr=lr)
+        self.cri = loss_function
     
-    def get_layers(self, shape: list, is_swift: bool) -> tuple:
-        act_f = activation.Swift(slope=1.) if is_swift else nn.ReLU()
+    def _get_layers(self, shape: list, is_swift: bool) -> tuple:
+        #Mode와 depth에 따른 모델 아키텍처 반환
+        act_f = activation.Swift(slope=1.5) if is_swift else nn.ReLU()
 
         layers = list()
         for d in range(len(shape)-1):
@@ -39,10 +33,31 @@ class Model(nn.Module):
             layers.append(act_f)
         return tuple(layers)
 
-    def forward(self, input) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         return self.layers(input)
     
+    def train(self, x: Tensor, y: Tensor) -> float:
+        y_hat = self.forward(x)
+        loss = self.cri(y_hat, y)
+
+        self.optim.zero_grad()
+        loss.backward()
+        self.optim.step()
+        return loss.item()
+
+def get_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Argument Help')
+    parser.add_argument('--mode', type=str, default='logic', choices=('logic', 'mnist', 'cifar10'))
+    parser.add_argument('--depth', type=int, default=1, choices=(1, 2, 3))
+    parser.add_argument('--batch_size', type=int, default=1)
+    parser.add_argument('--lr', type=float, default=0.01)
+    # parser.add_argument('--dataset_size', type=int, default=4)
+    # parser.add_argument('--logic', type=str, default='XOR', choices=('AND', 'OR', 'XOR', 'NOT'))
+    # parser.add_argument('--input_size', type=int, default=2)
+    return parser.parse_args()
+
 def get_model_shape(mode: str, depth: int) -> tuple:
+    #Mode와 Depth에 따른 모델 형태 반환
     dataset_shapes = {
         #in shape, out shape
         'logic': (2, 4, 6, 1),
@@ -75,19 +90,67 @@ def mnistDataLoader(train: bool, batch_size: int) -> DataLoader:
     )
     return loader
 
+def train_model(model: Module, x: Tensor, y: Tensor, cri, optim) -> float:
+    y_hat = model(x)
+    loss = cri(y_hat, y)
+
+    optim.zero_grad()
+    loss.backward()
+    optim.step()
+    return loss.item()
+
+def copy_param(alpha: Module, beta: Module) -> None:
+    '''
+    copy model 'alpha' to 'beta'
+    '''
+    beta.load_state_dict(alpha.state_dict())
+
+get_mean = lambda x: (sum(x) / len(x))
+
 
 if __name__ == '__main__':
     args = get_args()
 
     model_shape = get_model_shape(mode=args.mode, depth=args.depth)
-    swift_model = Model(shape=model_shape, is_swift=True)
-    defalut_model = Model(shape=model_shape, is_swift=False)
+
+    swift_model = Model(
+        shape=model_shape,
+        optimizer=torch.optim.SGD,
+        lr=args.lr,
+        loss_function=nn.MSELoss(),
+        is_swift=True,
+    )
+    default_model = Model(
+        shape=model_shape,
+        optimizer=torch.optim.SGD,
+        lr=args.lr,
+        loss_function=nn.MSELoss(),
+        is_swift=False,
+    )
+    
+    #siwft model의 파라미터와 default model의 파라미터 일치화
+    copy_param(alpha=swift_model, beta=default_model)
 
     if args.mode == 'logic':
-        dataLoader = DataLoader(XorGate(dataset_size=5000), batch_size=args.batch_size, shuffle=True)
+        dataLoader = tqdm(
+            DataLoader(
+                XorGate(dataset_size=5000),
+                batch_size=args.batch_size,
+                shuffle=True
+            )
+        )
 
-        for x, y in tqdm(dataLoader):
-            pass
+        swi_losses, def_losses = list(), list()
+        for x, y in dataLoader:
+            swi_loss = swift_model.train(x, y)
+            def_loss = default_model.train(x, y)
+
+            swi_losses.append(swi_loss)
+            def_losses.append(def_loss)
+            dataLoader.set_description(
+                f'Swift Loss: {get_mean(swi_losses):.3f}   Default Loss: {get_mean(def_losses):.3f}'
+            )
+            
 
         raise
 
