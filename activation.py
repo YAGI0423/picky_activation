@@ -1,4 +1,3 @@
-import math
 from torch import nn
 from torch import Tensor
 
@@ -8,8 +7,8 @@ def swift_(input) -> Tensor:
     Function type SWIFT Activation
     '''
     out = input.clone()
-    under = (out < -1.)
-    upper = (1. < out)
+    # under = (out < -1.)
+    # upper = (1. < out)
 
     #Linear
     # out[under] = (out[under] + 2.)
@@ -17,9 +16,29 @@ def swift_(input) -> Tensor:
     # out[upper] = (out[upper] - 2.)
 
     #SIN
-    out[under] = (out[under] + 1.)
-    out[~under * ~upper] = (math.pi * (out[~under * ~upper] + 1.)).sin() #-1 <= x <= 1
-    out[upper] = (out[upper] - 1.)
+    # out[under] = (out[under] + 1.)
+    # out[~under * ~upper] = (math.pi * (out[~under * ~upper] + 1.)).sin() #-1 <= x <= 1
+    # out[upper] = (out[upper] - 1.)
+
+    #Swing <BEST
+    # out[under] = (-out[under])
+    # out[~under * ~upper] = (out[~under * ~upper] ** 2)
+    # out[upper] = (out[upper])
+
+    #under picky <BEST
+    under = (out < 0.)
+    out[under] = (-out[under])
+    out[~under] = (out[~under])
+
+    #upper picky <BEST
+    # under = (out < 0.)
+    # out[under] = (out[under])
+    # out[~under] = (-out[~under])
+
+    #bound upper picky
+    # under = (out < 0.)
+    # out[under] = (out[under] + 1.)
+    # out[~under] = (-out[~under] + 1.)
     return out
 
 class Swift(nn.Module):
