@@ -61,6 +61,12 @@ def seed_everything(seed: int=42) -> None:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
 
+def print_set_info(args: argparse.Namespace) -> None:
+    print('\n\n')
+    print(f'SETTING INFO'.center(60, '='))
+    print(f'+ Mode: {args.mode}({args.device})')
+    print(f'+ Depth: {args.depth}', end='\n\n')
+
 def get_argsByMode(mode: str) -> tuple:
     '''
     mode에 따른 하이퍼파라미터 반환
@@ -84,7 +90,7 @@ def get_argsByMode(mode: str) -> tuple:
     elif mode == 'mnist':
         return 4, 0.0001, nn.CrossEntropyLoss()
     elif mode == 'cifar10':
-        return 128, 0.001, nn.CrossEntropyLoss()
+        return 128, 0.0001, nn.CrossEntropyLoss()
     raise
 
 def get_model_shape(mode: str, depth: int) -> tuple:
@@ -137,7 +143,7 @@ def cifarDataLoader(train: bool, batch_size: int) -> DataLoader:
             root='./dataset/cifar10/',
             train=train,
             transform=transform,
-            download=True
+
         ), shuffle=train, batch_size=batch_size
     )
     return loader
@@ -169,6 +175,7 @@ if __name__ == '__main__':
     DEVICE = args.device
     BATCH_SIZE, LR, CRI = get_argsByMode(mode=args.mode)
     model_shape = get_model_shape(mode=args.mode, depth=args.depth)
+    print_set_info(args)
 
     swift_model = Model( #swift activation Model
         shape=model_shape,
@@ -227,7 +234,7 @@ if __name__ == '__main__':
                 swi_tr_losses.append(swi_loss)
                 def_tr_losses.append(def_loss)
                 train_dataLoader.set_description(
-                    f'Swift Loss: {get_mean(swi_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
+                    f'TRAIN   Swift Loss: {get_mean(swi_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
                 )
 
             test_dataLoader = tqdm(mnistDataLoader(train=False, batch_size=10000)) #One Batch All Data
@@ -239,19 +246,21 @@ if __name__ == '__main__':
                 swi_te_losses.append(swi_loss)
                 def_te_losses.append(def_loss)
                 test_dataLoader.set_description(
-                    f'Swift Loss: {swi_loss:.3f}   Default Loss: {def_loss:.3f}'
+                    f'TEST   Swift Loss: {swi_loss:.3f}   Default Loss: {def_loss:.3f}'
                 )
+            print()
 
         save_plot(
             swift_loss=swi_te_losses,
             default_loss=def_te_losses,
             head_title=f'Loss on MNIST Test set',
             figure_path='./figures/2_lossOnMNIST_Test_set.png',
+            ylim=(0.2, 0.6),
         )
 
     elif args.mode == 'cifar10':
         swi_te_losses, def_te_losses = list(), list() #TEST
-        for e in range(5): #EPOCH
+        for e in range(10): #EPOCH
             train_dataLoader = tqdm(cifarDataLoader(train=True, batch_size=BATCH_SIZE))  
             swi_tr_losses, def_tr_losses = list(), list() #TRAIN  
             for x, y in train_dataLoader:
@@ -262,10 +271,10 @@ if __name__ == '__main__':
                 swi_tr_losses.append(swi_loss)
                 def_tr_losses.append(def_loss)
                 train_dataLoader.set_description(
-                    f'Swift Loss: {get_mean(swi_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
+                    f'TRAIN   Swift Loss: {get_mean(swi_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
                 )
 
-            test_dataLoader = tqdm(cifarDataLoader(train=False, batch_size=3072)) #One Batch All Data
+            test_dataLoader = tqdm(cifarDataLoader(train=False, batch_size=12288)) #One Batch All Data
             for x, y in test_dataLoader:
                 x, y = x.to(DEVICE), y.to(DEVICE)
                 swi_loss = swift_model.cri(swift_model(x), y).item()
@@ -274,13 +283,14 @@ if __name__ == '__main__':
                 swi_te_losses.append(swi_loss)
                 def_te_losses.append(def_loss)
                 test_dataLoader.set_description(
-                    f'Swift Loss: {swi_loss:.3f}   Default Loss: {def_loss:.3f}'
+                    f'TEST   Swift Loss: {swi_loss:.3f}   Default Loss: {def_loss:.3f}'
                 )
+            print()
 
         save_plot(
             swift_loss=swi_te_losses,
             default_loss=def_te_losses,
             head_title=f'Loss on MNIST Test set',
             figure_path='./figures/3_lossOnCIFAR10_Test_set.png',
-            ylim=(0, 2),
+            ylim=(1., 2.),
         )

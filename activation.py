@@ -26,9 +26,9 @@ def swift_(input) -> Tensor:
     # out[upper] = (out[upper])
 
     #under picky <BEST
-    under = (out < 0.)
-    out[under] = (-out[under])
-    out[~under] = (out[~under])
+    # under = (out < 0.)
+    # out[under] = (-out[under])
+    # out[~under] = (out[~under])
 
     #upper picky <BEST
     # under = (out < 0.)
@@ -36,9 +36,9 @@ def swift_(input) -> Tensor:
     # out[~under] = (-out[~under])
 
     #bound upper picky
-    # under = (out < 0.)
-    # out[under] = (out[under] + 1.)
-    # out[~under] = (-out[~under] + 1.)
+    under = (out < 0.)
+    out[under] = (out[under] + 1.)
+    out[~under] = (-out[~under] + 1.)
     return out
 
 class Swift(nn.Module):
