@@ -124,7 +124,7 @@ def mnistDataLoader(train: bool, batch_size: int) -> DataLoader:
     ])
     loader = DataLoader(
         MNIST(
-            root='./dataset/mnist/',
+            root='./datasets/mnist/',
             train=train,
             transform=transform,
             download=True
@@ -140,7 +140,7 @@ def cifarDataLoader(train: bool, batch_size: int) -> DataLoader:
     ])
     loader = DataLoader(
         CIFAR10(
-            root='./dataset/cifar10/',
+            root='./datasets/cifar10/',
             train=train,
             transform=transform,
 
