@@ -19,8 +19,8 @@
 ***
 <br>
 
-## 프로젝트 요약
-&nbsp;&nbsp; 현재 주로 사용되는 'ReLU', 'Sigmoid', 'Tanh'와 같은 활성화 함수를 기반으로 하는 단일 퍼셉트론은 XOR 문제를 해결 할 수 없다. 본 프로젝트에서는 단일 퍼셉트론 만으로 XOR 문제를 최적화할 수 있으며 나아가 다른 태스크에 대하여 기존 활성화 함수보다 비슷하거나 준수한 성능을 제시하는 'Picky' 활성화 함수를 제안 한다. Equation 1은 Picky 활성화 함수의 식을 제시한 것이다.
+## 프로젝트 내용
+&nbsp;&nbsp; 현재 주로 사용되는 'ReLU', 'Sigmoid', 'Tanh'와 같은 활성화 함수를 기반으로 하는 단일 퍼셉트론은 XOR 문제를 해결 할 수 없다. 본 프로젝트에서는 단일 퍼셉트론으로 XOR 문제 최적화가 가능한 'Picky' 활성화 함수를 제안 한다. 나아가 다른 태스크에 대해 기존 활성화 함수보다 비슷하거나 준수한 성능을 제시함을 확인하였다. Equation 1은 Picky 활성화 함수의 식을 제시한 것이다.
 
 <br>
 
@@ -44,7 +44,7 @@ $$
 
 <br>
 
-&nbsp;&nbsp; Picky 활성화 함수를 사용함으로써 단일 퍼셉트론만으로 XOR 문제를 해결할 수 있음을 확인하였다. Fig 2는 Picky 활성화 함수와 ReLU 활성화 함수를 사용한 각각의 단일 퍼셉트론의 XOR 문제에 대한 손실값의 변화를 시각화한 것이다. 두 퍼셉트론의 파라미터는 동일한 값을 가진 상태로 초기화하였으며, Adam 옵티마이저를 사용하여 학습율 0.01, 배치 사이즈 1로 설정하여 MSE 손실함수로 1회 학습하였다.
+&nbsp;&nbsp; Picky 활성화 함수를 사용함으로써 단일 퍼셉트론만으로 XOR 문제를 해결할 수 있음을 확인하였다. Fig 2는 XOR 문제에 대한 Picky 활성화 함수와 ReLU 활성화 함수를 사용한 각각의 단일 퍼셉트론의 손실값 변화를 시각화한 것이다. 두 퍼셉트론의 파라미터는 동일한 값을 가진 상태로 초기화되었으며, Adam 옵티마이저를 사용하여 학습율 0.01, 배치 사이즈 1로 설정하여 MSE 손실함수로 1회 학습하였다.
 
 <br><img src='./figures/1_lossOnXorDataset.png' height=250>
 
@@ -52,7 +52,7 @@ $$
 
 <br>
 
-&nbsp;&nbsp; 나아가 MNIST, CIFAR-10과 같은 이외의 태스크에 대해, Picky 활성화 함수를 적용한 다층 신경망이 ReLU와 같은 기존 활성화 함수를 적용한 다층 신경망에 비해 그와 비슷하거나 더 준수한 성능을 제시하였다. Fig 3과 Fig 4는 각각 MNIST와 CIFAR-10의 테스트 데이터 셋에 대한 Picky 활성화 함수와 ReLU 활성화 함수의 손실값 변화를 시각화 한 것이다.
+&nbsp;&nbsp; 나아가 MNIST, CIFAR-10과 같은 이외의 태스크에 대해, Picky 활성화 함수를 적용한 다층 신경망이 ReLU와 같은 기존 활성화 함수를 적용한 다층 신경망과 비슷하거나 더 준수한 성능을 제시하였다. Fig 3과 Fig 4는 각각 MNIST와 CIFAR-10의 테스트 데이터 셋에 대한 Picky 활성화 함수와 ReLU 활성화 함수의 손실값 변화를 시각화 한 것이다.
 
 <br><img src='./figures/2_lossOnMNIST_Test_set.png' height=250>
 
@@ -96,7 +96,7 @@ $ python main.py --mode cifar10 --depth 2 --device cuda
 #Auto Encoder Example
 $ python main.py --mode AE --depth 3 -- device cuda
 
-#학습 완료 후 './figures/' 디렉토리에 그래프 저장됨.
+#학습 완료 후 './figures/' 디렉토리에 그래프가 저장됨.
 
 ```
 <br>
