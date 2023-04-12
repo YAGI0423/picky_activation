@@ -48,8 +48,8 @@ class Model(Module):
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Argument Help')
-    parser.add_argument('--mode', type=str, default='logic', choices=('logic', 'mnist', 'cifar10'))
-    parser.add_argument('--depth', type=int, default=1, choices=(1, 2, 3))
+    parser.add_argument('--mode', type=str, default='AE', choices=('logic', 'mnist', 'cifar10', 'AE'))
+    parser.add_argument('--depth', type=int, default=3, choices=(1, 2, 3))
     parser.add_argument('--device', type=str, default='cpu', choices=('cuda', 'cpu'))
     return parser.parse_args()
 
@@ -65,8 +65,8 @@ def print_set_info(args: argparse.Namespace) -> None:
     print('\n\n')
     print(f'SETTING INFO'.center(60, '='))
     print(f'+ Mode: {args.mode}({args.device})')
-    print(f'+ Depth: {args.depth}', end='\n\n')
-    print('=' * 60)
+    print(f'+ Depth: {args.depth}')
+    print('=' * 60, end='\n\n')
 
 def get_argsByMode(mode: str) -> tuple:
     '''
@@ -85,6 +85,11 @@ def get_argsByMode(mode: str) -> tuple:
         batch size: 128
         lr: 0.001
         loss fc: cross entropy
+
+    (4) AutoEncoder
+        batch size: 16
+        lr: 0.001
+        loss fc: MSE
     '''
     if mode == 'logic':
         return 1, 0.01, nn.MSELoss() #batch, lr, lossFC
@@ -92,6 +97,8 @@ def get_argsByMode(mode: str) -> tuple:
         return 4, 0.0001, nn.CrossEntropyLoss()
     elif mode == 'cifar10':
         return 128, 0.0001, nn.CrossEntropyLoss()
+    elif mode == 'AE':
+        return 256, 0.0005, nn.MSELoss()
     raise
 
 def get_model_shape(mode: str, depth: int) -> tuple:
@@ -101,6 +108,7 @@ def get_model_shape(mode: str, depth: int) -> tuple:
         'logic': (2, 4, 6, 1),
         'mnist': (784, 100, 50, 10),
         'cifar10': (3*32*32, 1000, 100, 10),
+        'AE': (3*32*32, 1024, 1024, 3*32*32),
     }
     shapes = [dataset_shapes[mode][shape] for shape in range(depth)]
     shapes.append(dataset_shapes[mode][-1])
@@ -254,10 +262,9 @@ if __name__ == '__main__':
             figure_path='./figures/2_lossOnMNIST_Test_set.png',
             ylim=(0.2, 0.6),
         )
-
     elif args.mode == 'cifar10':
         pick_te_losses, def_te_losses = list(), list() #TEST
-        for e in range(10): #EPOCH
+        for e in range(15): #EPOCH
             train_dataLoader = tqdm(cifarDataLoader(train=True, batch_size=BATCH_SIZE))  
             pick_tr_losses, def_tr_losses = list(), list() #TRAIN  
             for x, y in train_dataLoader:
@@ -291,3 +298,72 @@ if __name__ == '__main__':
             figure_path='./figures/3_lossOnCIFAR10_Test_set.png',
             ylim=(1., 2.),
         )
+    elif args.mode == 'AE':
+        clip_img = lambda img: (img.min() - img) / (img.min() - img.max())
+        reshape_img = lambda img: img.view(3, 32, 32).permute(1, 2, 0)
+        recover_img = lambda img: reshape_img(clip_img(img))
+
+
+        pick_te_losses, def_te_losses = list(), list() #TEST
+        for e in range(15): #EPOCH
+            train_dataLoader = tqdm(cifarDataLoader(train=True, batch_size=BATCH_SIZE))
+            pick_tr_losses, def_tr_losses = list(), list() #TRAIN  
+            for x, _ in train_dataLoader:
+                x = x.to(DEVICE)
+
+                pick_loss = picky_model.train(x, x)
+                def_loss = default_model.train(x, x)
+
+                pick_tr_losses.append(pick_loss)
+                def_tr_losses.append(def_loss)
+                train_dataLoader.set_description(
+                    f'TRAIN   Picky Loss: {get_mean(pick_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
+                )
+
+            test_dataLoader = tqdm(cifarDataLoader(train=False, batch_size=12288))
+            for x, _ in test_dataLoader:
+                x = x.to(DEVICE)
+                pick_loss = picky_model.cri(picky_model(x), x).item()
+                def_loss = default_model.cri(default_model(x), x).item()
+
+                pick_te_losses.append(pick_loss)
+                def_te_losses.append(def_loss)
+                test_dataLoader.set_description(
+                    f'TEST   Picky Loss: {pick_loss:.3f}   Default Loss: {def_loss:.3f}'
+                )
+            print()
+
+        save_plot(
+            picky_loss=pick_te_losses,
+            default_loss=def_te_losses,
+            head_title=f'Loss on CIFAR10 Test set for Auto Encoder',
+            figure_path='./figures/4_lossOnCIFAR10_Test_set_AE.png',
+            ylim=None,
+        )
+
+        samples, _ = next(iter(cifarDataLoader(train=False, batch_size=5)))
+        
+        plt.figure(figsize=(10, 6))
+        plt.suptitle('Auto Encoder Output on CIFAR-10', fontsize=15, fontweight='bold')
+        plt.subplots_adjust(left=0.1, right=0.95, bottom=0.05, top=0.88, wspace=0.175, hspace=0.1)
+        
+
+        pick_samples = picky_model(samples.to(DEVICE)).detach().cpu()
+        def_samples = default_model(samples.to(DEVICE)).detach().cpu()
+        for row, (sp, pick_sp, def_sp) in enumerate(zip(samples, pick_samples, def_samples), 1):
+
+            plt.subplot(3, 5, row)
+            plt.axis('off')
+            plt.imshow(recover_img(sp))
+            if row == 1: plt.text(-16, 16, 'Input', fontdict={'weight': 'bold', 'size': 14})
+
+            plt.subplot(3, 5, 5+row)
+            plt.axis('off')
+            plt.imshow(recover_img(pick_sp))
+            if row == 1: plt.text(-16, 16, 'Picky' ,fontdict={'weight': 'bold', 'size': 14, 'color': 'blue'})
+
+            plt.subplot(3, 5, 10+row)
+            plt.axis('off')
+            plt.imshow(recover_img(def_sp))
+            if row == 1: plt.text(-16, 16, 'ReLU', fontdict={'weight': 'bold', 'size': 14})
+        plt.savefig('./figures/5_AE_OutputOnCifar10')
