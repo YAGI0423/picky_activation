@@ -38,7 +38,7 @@ $$
 
 &nbsp;&nbsp; Picky 활성화 함수는 0을 중심으로 대칭의 형태를 띈다. 특정 입력에 대하여 비활성화되는 것이 마치 편식(Pick)하는 것과 같아「Picky」로 명명하였다. Fig 1은 Picky 활성화 함수를 시각화 한 것이다.
 
-<br><center><img src='./readme_figures/shapeOfPicky.png' height=250></center>
+<br><img src='./readme_figures/shapeOfPicky.png' height=250>
 
 <b>Fig 1</b>. Shape of Picky Activation Function.
 
@@ -74,7 +74,7 @@ $$
 
 <br>
 
-<br><img src='./figures/5_AE_OutputOnCifar10.png' height=250>
+<br><img src='./figures/5_AE_OutputOnCifar10.png' height=300>
 
 <b>Fig 6</b>. Auto Encoder Output on CIFAR-10.
 
