@@ -9,6 +9,7 @@
 
 최종 수정일: 2023-04-12
 + 2023.04.12: 코드 작성 완료
++ 2023.04.13: Auto Encoder 예제 추가
 ***
 
 <br>
@@ -30,6 +31,7 @@ y_i =
         -x_i & \text{if $x_i$ < 0}
     \end{cases}
 $$
+
 Eq 1. Equation of Picky Activation
 
 <br><br>
