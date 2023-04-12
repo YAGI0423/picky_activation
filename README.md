@@ -32,7 +32,7 @@ y_i =
     \end{cases}
 $$
 
-Eq 1. Equation of Picky Activation
+<b>Eq 1</b>. Equation of Picky Activation
 
 <br>
 
@@ -40,7 +40,7 @@ Eq 1. Equation of Picky Activation
 
 <br><img src='./readme_figures/shapeOfPicky.png' height=220>
 
-Fig 1. Shape of Picky Activation Function.
+<b>Fig 1</b>. Shape of Picky Activation Function.
 
 <br>
 
@@ -48,7 +48,7 @@ Fig 1. Shape of Picky Activation Function.
 
 <br><img src='./figures/1_lossOnXorDataset.png' height=220>
 
-Fig 2. Loss On XOR Dataset.
+<b>Fig 2</b>. Loss On XOR Dataset.
 
 <br>
 
@@ -56,13 +56,13 @@ Fig 2. Loss On XOR Dataset.
 
 <br><img src='./figures/2_lossOnMNIST_Test_set.png' height=220>
 
-Fig 3. Loss On MNIST Test set. 한 층으로 이루어진 모델. 32 배치 사이즈로 Cross Entropy 손실 함수를 사용하여 3 Epoch 학습.
+<b>Fig 3</b>. Loss On MNIST Test set. 한 층으로 이루어진 모델. 32 배치 사이즈로 Cross Entropy 손실 함수를 사용하여 3 Epoch 학습.
 
 <br>
 
 <br><img src='./figures/3_lossOnCIFAR10_Test_set.png' height=220>
 
-Fig 4. Loss On CIFAR-10 Test set. 두 층으로 이루어진 모델. 128 배치 사이즈로 Cross Entropy 손실 함수를 사용하여 10 Epoch 학습.
+<b>Fig 4</b>. Loss On CIFAR-10 Test set. 두 층으로 이루어진 모델. 128 배치 사이즈로 Cross Entropy 손실 함수를 사용하여 10 Epoch 학습.
 
 <br>
 
@@ -70,13 +70,13 @@ Fig 4. Loss On CIFAR-10 Test set. 두 층으로 이루어진 모델. 128 배치 
 
 <br><img src='./figures/4_lossOnCIFAR10_Test_set_AE.png' height=220>
 
-Fig 5. Loss On CIFAR-10 Test set for Auto Encoder.
+<b>Fig 5</b>. Loss On CIFAR-10 Test set for Auto Encoder.
 
 <br>
 
 <br><img src='./figures/5_AE_OutputOnCifar10.png' height=220>
 
-Fig 6. Auto Encoder Output on CIFAR-10.
+<b>Fig 6</b>. Auto Encoder Output on CIFAR-10.
 
 <br><br>
 
