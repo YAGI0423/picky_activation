@@ -17,16 +17,16 @@ from logicGateDataset.datasets import XorGate
 
 
 class Model(Module):
-    def __init__(self, shape: list, optimizer, lr: float, loss_function, is_swift: bool=False) -> None:
+    def __init__(self, shape: list, optimizer, lr: float, loss_function, is_picky: bool=False) -> None:
         super(Model, self).__init__()
-        self.layers = nn.Sequential(*self._get_layers(shape, is_swift))
+        self.layers = nn.Sequential(*self._get_layers(shape, is_picky))
 
         self.optim = optimizer(self.parameters(), lr=lr)
         self.cri = loss_function
     
-    def _get_layers(self, shape: list, is_swift: bool) -> tuple:
+    def _get_layers(self, shape: list, is_picky: bool) -> tuple:
         #Mode와 depth에 따른 모델 아키텍처 반환
-        act_f = activation.Swift() if is_swift else nn.ReLU()
+        act_f = activation.Picky() if is_picky else nn.ReLU()
 
         layers = list()
         for d in range(len(shape)-1):
@@ -48,12 +48,12 @@ class Model(Module):
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Argument Help')
-    parser.add_argument('--mode', type=str, default='cifar10', choices=('logic', 'mnist', 'cifar10'))
+    parser.add_argument('--mode', type=str, default='logic', choices=('logic', 'mnist', 'cifar10'))
     parser.add_argument('--depth', type=int, default=1, choices=(1, 2, 3))
-    parser.add_argument('--device', type=str, default='cuda', choices=('cuda', 'cpu'))
+    parser.add_argument('--device', type=str, default='cpu', choices=('cuda', 'cpu'))
     return parser.parse_args()
 
-def seed_everything(seed: int=42) -> None:
+def seed_everything(seed: int=423) -> None:
     # random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     torch.manual_seed(seed)
@@ -66,6 +66,7 @@ def print_set_info(args: argparse.Namespace) -> None:
     print(f'SETTING INFO'.center(60, '='))
     print(f'+ Mode: {args.mode}({args.device})')
     print(f'+ Depth: {args.depth}', end='\n\n')
+    print('=' * 60)
 
 def get_argsByMode(mode: str) -> tuple:
     '''
@@ -133,6 +134,8 @@ def mnistDataLoader(train: bool, batch_size: int) -> DataLoader:
     return loader
 
 def cifarDataLoader(train: bool, batch_size: int) -> DataLoader:
+    is_donwload = not os.path.isdir('./datasets/cifar10') #isdir -> False, nodir -> True
+
     transform = Compose([
         ToTensor(),
         Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
@@ -143,25 +146,19 @@ def cifarDataLoader(train: bool, batch_size: int) -> DataLoader:
             root='./datasets/cifar10/',
             train=train,
             transform=transform,
-
+            download=is_donwload,
         ), shuffle=train, batch_size=batch_size
     )
     return loader
 
-def save_plot(swift_loss: list, default_loss: list, head_title: str, figure_path: str, ylim: tuple=(0, 1)) -> None:
-    plt.figure(figsize=(14, 5.5))
+def save_plot(picky_loss: list, default_loss: list, head_title: str, figure_path: str, ylim: tuple=(0, 1)) -> None:
+    plt.figure(figsize=(7, 4))
     plt.suptitle(head_title, fontsize=15, fontweight='bold')
-    plt.subplots_adjust(left=0.05, right=0.95, bottom=0.125, top=0.825, wspace=0.175, hspace=0.1)
+    plt.subplots_adjust(left=0.1, right=0.95, bottom=0.125, top=0.85, wspace=0.175, hspace=0.1)
     
-    plt.subplot(1, 2, 1)
-    plt.title('Swift Activation', fontdict={'fontsize': 13, 'fontweight': 'bold'}, loc='left', pad=10)
-    plt.plot(swift_loss, color='green')
-    plt.grid()
-    plt.ylim(ylim)
-    
-    plt.subplot(1, 2, 2)
-    plt.title('Default(ReLU) Activation', fontdict={'fontsize': 13, 'fontweight': 'bold'}, loc='left', pad=10)
-    plt.plot(default_loss, color='black')
+    plt.plot(default_loss, color='gray', label='Default(ReLU) Activation')
+    plt.plot(picky_loss, color='green', label='Picky Activtaion')
+    plt.legend()
     plt.grid()
     plt.ylim(ylim)
     plt.savefig(figure_path)
@@ -177,81 +174,81 @@ if __name__ == '__main__':
     model_shape = get_model_shape(mode=args.mode, depth=args.depth)
     print_set_info(args)
 
-    swift_model = Model( #swift activation Model
+    picky_model = Model( #picky activation Model
         shape=model_shape,
         optimizer=torch.optim.Adam,
         lr=LR,
         loss_function=CRI,
-        is_swift=True,
+        is_picky=True,
     ).to(DEVICE)
     default_model = Model( #Default(ReLU) activation Model
         shape=model_shape,
         optimizer=torch.optim.Adam,
         lr=LR,
         loss_function=CRI,
-        is_swift=False,
+        is_picky=False,
     ).to(DEVICE)
     
-    copy_param(alpha=swift_model, beta=default_model) #swift parameter copy to default model
+    copy_param(alpha=picky_model, beta=default_model) #picky parameter copy to default model
 
     if args.mode == 'logic':
         dataLoader = tqdm(
             DataLoader(
-                XorGate(dataset_size=1000),
+                XorGate(dataset_size=300),
                 batch_size=BATCH_SIZE,
                 shuffle=True
             )
         )
 
-        swi_losses, def_losses = list(), list()
+        pick_losses, def_losses = list(), list()
         for x, y in dataLoader:
             x, y = x.to(DEVICE), y.to(DEVICE)
-            swi_loss = swift_model.train(x, y)
+            pick_loss = picky_model.train(x, y)
             def_loss = default_model.train(x, y)
 
-            swi_losses.append(swi_loss)
+            pick_losses.append(pick_loss)
             def_losses.append(def_loss)
             dataLoader.set_description(
-                f'Swift Loss: {get_mean(swi_losses):.3f}   Default Loss: {get_mean(def_losses):.3f}'
+                f'Picky Loss: {get_mean(pick_losses):.3f}   Default Loss: {get_mean(def_losses):.3f}'
             )
             
         save_plot(
-            swift_loss=swi_losses,
+            picky_loss=pick_losses,
             default_loss=def_losses,
             head_title=f'Loss on XOR Dataset',
             figure_path='./figures/1_lossOnXorDataset.png',
         )
     elif args.mode == 'mnist':
-        swi_te_losses, def_te_losses = list(), list() #TEST
+        pick_te_losses, def_te_losses = list(), list() #TEST
         for e in range(3): #EPOCH
             train_dataLoader = tqdm(mnistDataLoader(train=True, batch_size=BATCH_SIZE))  
-            swi_tr_losses, def_tr_losses = list(), list() #TRAIN  
+            pick_tr_losses, def_tr_losses = list(), list() #TRAIN  
             for x, y in train_dataLoader:
                 x, y = x.to(DEVICE), y.to(DEVICE)
-                swi_loss = swift_model.train(x, y)
+                pick_loss = picky_model.train(x, y)
                 def_loss = default_model.train(x, y)
 
-                swi_tr_losses.append(swi_loss)
+                pick_tr_losses.append(pick_loss)
                 def_tr_losses.append(def_loss)
                 train_dataLoader.set_description(
-                    f'TRAIN   Swift Loss: {get_mean(swi_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
+                    f'TRAIN   Picky Loss: {get_mean(pick_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
                 )
 
             test_dataLoader = tqdm(mnistDataLoader(train=False, batch_size=10000)) #One Batch All Data
             for x, y in test_dataLoader:
                 x, y = x.to(DEVICE), y.to(DEVICE)
-                swi_loss = swift_model.cri(swift_model(x), y).item()
+                pick_loss = picky_model.cri(picky_model(x), y).item()
                 def_loss = default_model.cri(default_model(x), y).item()
 
-                swi_te_losses.append(swi_loss)
+                pick_te_losses.append(pick_loss)
                 def_te_losses.append(def_loss)
                 test_dataLoader.set_description(
-                    f'TEST   Swift Loss: {swi_loss:.3f}   Default Loss: {def_loss:.3f}'
+                    f'TEST   Picky Loss: {pick_loss:.3f}   Default Loss: {def_loss:.3f}'
                 )
             print()
 
         save_plot(
-            swift_loss=swi_te_losses,
+            picky_loss=pick_te_losses,
             default_loss=def_te_losses,
             head_title=f'Loss on MNIST Test set',
             figure_path='./figures/2_lossOnMNIST_Test_set.png',
@@ -259,38 +256,38 @@ if __name__ == '__main__':
         )
 
     elif args.mode == 'cifar10':
-        swi_te_losses, def_te_losses = list(), list() #TEST
+        pick_te_losses, def_te_losses = list(), list() #TEST
         for e in range(10): #EPOCH
             train_dataLoader = tqdm(cifarDataLoader(train=True, batch_size=BATCH_SIZE))  
-            swi_tr_losses, def_tr_losses = list(), list() #TRAIN  
+            pick_tr_losses, def_tr_losses = list(), list() #TRAIN  
             for x, y in train_dataLoader:
                 x, y = x.to(DEVICE), y.to(DEVICE)
-                swi_loss = swift_model.train(x, y)
+                pick_loss = picky_model.train(x, y)
                 def_loss = default_model.train(x, y)
 
-                swi_tr_losses.append(swi_loss)
+                pick_tr_losses.append(pick_loss)
                 def_tr_losses.append(def_loss)
                 train_dataLoader.set_description(
-                    f'TRAIN   Swift Loss: {get_mean(swi_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
+                    f'TRAIN   Picky Loss: {get_mean(pick_tr_losses):.3f}   Default Loss: {get_mean(def_tr_losses):.3f}'
                 )
 
             test_dataLoader = tqdm(cifarDataLoader(train=False, batch_size=12288)) #One Batch All Data
             for x, y in test_dataLoader:
                 x, y = x.to(DEVICE), y.to(DEVICE)
-                swi_loss = swift_model.cri(swift_model(x), y).item()
+                pick_loss = picky_model.cri(picky_model(x), y).item()
                 def_loss = default_model.cri(default_model(x), y).item()
 
-                swi_te_losses.append(swi_loss)
+                pick_te_losses.append(pick_loss)
                 def_te_losses.append(def_loss)
                 test_dataLoader.set_description(
-                    f'TEST   Swift Loss: {swi_loss:.3f}   Default Loss: {def_loss:.3f}'
+                    f'TEST   Picky Loss: {pick_loss:.3f}   Default Loss: {def_loss:.3f}'
                 )
             print()
 
         save_plot(
-            swift_loss=swi_te_losses,
+            picky_loss=pick_te_losses,
             default_loss=def_te_losses,
-            head_title=f'Loss on MNIST Test set',
+            head_title=f'Loss on CIFAR10 Test set',
             figure_path='./figures/3_lossOnCIFAR10_Test_set.png',
             ylim=(1., 2.),
         )
