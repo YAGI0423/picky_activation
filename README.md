@@ -74,7 +74,7 @@ $$
 
 <br>
 
-<br><img src='./figures/5_AE_OutputOnCifar10.png' height=400>
+<br><img src='./figures/5_AE_OutputOnCifar10.png'>
 
 <b>Fig 6</b>. Auto Encoder Output on CIFAR-10.
 
