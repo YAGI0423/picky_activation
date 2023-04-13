@@ -7,15 +7,16 @@
 ***
 작성자: YAGI<br>
 
-최종 수정일: 2023-04-12
+최종 수정일: 2023-04-13
 + 2023.04.12: 코드 작성 완료
 + 2023.04.13: Auto Encoder 예제 추가
++ 2023.04.13: READ ME 작성 완료
 ***
 
 <br>
 
 ***
-+ 프로젝트 기간: 2023-04-04 ~
++ 프로젝트 기간: 2023-04-04 ~ 2023-04-13
 ***
 <br>
 
@@ -44,33 +45,15 @@ $$
 
 <br>
 
-&nbsp;&nbsp; Picky 활성화 함수를 사용함으로써 단일 퍼셉트론만으로 XOR 문제를 해결할 수 있음을 확인하였다. Fig 2는 XOR 문제에 대한 Picky 활성화 함수와 ReLU 활성화 함수를 사용한 각각의 단일 퍼셉트론의 손실값 변화를 시각화한 것이다. 두 퍼셉트론의 파라미터는 동일한 값을 가진 상태로 초기화되었으며, Adam 옵티마이저를 사용하여 학습율 0.01, 배치 사이즈 1로 설정하여 MSE 손실함수로 1회 학습하였다.
+&nbsp;&nbsp; Picky 활성화 함수를 사용함으로써 단일 퍼셉트론만으로 XOR 문제를 해결할 수 있음을 확인하였다. Fig 2.A는 XOR 문제에 대한 Picky 활성화 함수와 ReLU 활성화 함수를 사용한 각각의 단일 퍼셉트론의 손실값 변화를 시각화한 것이다. 두 퍼셉트론의 파라미터는 동일한 값을 가진 상태로 초기화되었으며, Adam 옵티마이저를 사용하여 학습율 0.01, 배치 사이즈 1로 설정하여 MSE 손실함수로 1회 학습하였다.
 
-<br><img src='./figures/1_lossOnXorDataset.png' height=250>
+&nbsp;&nbsp; 나아가 MNIST, CIFAR-10과 같은 이외의 태스크에 대해, Picky 활성화 함수를 적용한 다층 신경망이 ReLU 활성화 함수를 적용한 다층 신경망과 비슷하거나 더 준수한 성능을 제시하였다. MNIST 데이터 학습 시, 동일한 파라미터로 초기화된 한 층의 모델을 사용하였으며, Adam 옵티마이저를 사용하여 학습율 0.0001, 배치 사이즈 32로 설정하여 Cross Entropy 손실함수로 3회 학습하였다. CIFAR-10 데이터 학습 시, 두 층의 모델을 사용하고 학습율 0.001, 배치 사이즈 16으로 설정하였으며 이외의 하이퍼파라미터는 MNIST 데이터 학습 시의 설정과 동일하다. Fig 2.B와 Fig 2.C는 MNIST와 CIFAR-10의 테스트 데이터 셋에 대한 Picky 활성화 함수와 ReLU 활성화 함수의 손실값 변화를 각각 시각화 한 것이다.
 
-<b>Fig 2</b>. Loss On XOR Dataset.
+&nbsp;&nbsp; Picky와 ReLU를 사용한 Auto Encoder 각 모델의 성능을 파악한 결과, 두 모델 간의 손실값에 큰 차이가 없음을 확인하였다. 모델은 세 층으로 배치 사이즈 16, 학습율 0.001로 설정하여 MSE 손실 함수로 15 Epoch 학습하였다. 그 외의 하이퍼파라미터는 MNIST 데이터 학습 시의 설정과 동일하다. Fig 2.D는 CIFAR-10 테스트 셋에 대한 각 모델의 손실값 변화를 시각화 한 것이다. Fig 6은 Picky와 ReLU를 사용한 각 Auto Encoder의 Input 이미지에 대한 출력을 시각화 한 것이다.
 
-<br>
+<br><img src='./readme_figures/lossOnTestset.png'>
 
-&nbsp;&nbsp; 나아가 MNIST, CIFAR-10과 같은 이외의 태스크에 대해, Picky 활성화 함수를 적용한 다층 신경망이 ReLU와 같은 기존 활성화 함수를 적용한 다층 신경망과 비슷하거나 더 준수한 성능을 제시하였다. Fig 3과 Fig 4는 각각 MNIST와 CIFAR-10의 테스트 데이터 셋에 대한 Picky 활성화 함수와 ReLU 활성화 함수의 손실값 변화를 시각화 한 것이다.
-
-<br><img src='./figures/2_lossOnMNIST_Test_set.png' height=250>
-
-<b>Fig 3</b>. Loss On MNIST Test set. 한 층으로 이루어진 모델. 32 배치 사이즈로 Cross Entropy 손실 함수를 사용하여 3 Epoch 학습.
-
-<br>
-
-<br><img src='./figures/3_lossOnCIFAR10_Test_set.png' height=250>
-
-<b>Fig 4</b>. Loss On CIFAR-10 Test set. 두 층으로 이루어진 모델. 128 배치 사이즈로 Cross Entropy 손실 함수를 사용하여 10 Epoch 학습.
-
-<br>
-
-&nbsp;&nbsp; Auto Encoder 본문
-
-<br><img src='./figures/4_lossOnCIFAR10_Test_set_AE.png' height=250>
-
-<b>Fig 5</b>. Loss On CIFAR-10 Test set for Auto Encoder.
+<b>Fig 2</b>. XOR, MNIST, CIFAR-10 테스트 셋에 대한 Picky와 ReLU를 사용한 각 모델의 학습에 따른 손실 변화.
 
 <br>
 

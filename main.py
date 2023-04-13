@@ -48,8 +48,8 @@ class Model(Module):
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Argument Help')
-    parser.add_argument('--mode', type=str, default='AE', choices=('logic', 'mnist', 'cifar10', 'AE'))
-    parser.add_argument('--depth', type=int, default=3, choices=(1, 2, 3))
+    parser.add_argument('--mode', type=str, default='logic', choices=('logic', 'mnist', 'cifar10', 'AE'))
+    parser.add_argument('--depth', type=int, default=1, choices=(1, 2, 3))
     parser.add_argument('--device', type=str, default='cpu', choices=('cuda', 'cpu'))
     return parser.parse_args()
 
